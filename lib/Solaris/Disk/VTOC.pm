@@ -5,7 +5,7 @@ use Carp;
 
 =head1 NAME
 
-Solaris::Disk::VTOC;
+Solaris::Disk::VTOC - Read Solaris VTOC (aka. slices or partitions) from disks
 
 =head1 SYNOPSIS
 
@@ -50,7 +50,10 @@ partitions (aka slices).
 Two global hashes are defined for completeness. They are not this useful
 if you are a used Solaris administrator.
 
-=head2 C<%VTOCSliceType>
+=over
+
+=item *
+C<%VTOCSliceType>
 
 Global hash to translate slice types ([0-9a]) to plain english.
 
@@ -70,10 +73,11 @@ our %VTOCSliceType = (
     a => "CACHE",
 );
 
-=head2 C<%VTOCSliceFlag>
+=item *
+C<%VTOCSliceFlag>
 
 Global hash to translate partition flags (00, 01, 10, 11) to
-L<format(1M)> codes (wm, wu, rm, ru).
+format(1M) codes (wm, wu, rm, ru).
 
 =cut
 
@@ -94,8 +98,9 @@ require Exporter;
 our %EXPORT_TAGS = ( 'all' => [ qw( VTOCSliceType VTOCSliceFlag ) ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
+=back
 
 =head1 METHODS
 
@@ -113,12 +118,12 @@ Create the object, but not initialize:
   my $vtoc = Solaris::Disk::VTOC->new();	
 
 =item *
-Create the object, initialize from devices:
+Create the object, initialize from devices, with prtvtoc(1M) :
 
   my $vtoc = Solaris::Disk::VTOC->new(init => 1);	
 
 =item *
-Create the object, initialize from a directory containing prtvtoc(1m)
+Create the object, initialize from a directory containing prtvtoc(1M)
 dumps (see the C<readvtocdir> method).
 
   my $vtoc = Solaris::Disk::VTOC->new( sourcedir => '/path/to/dir/' );	
@@ -305,8 +310,8 @@ slice.
 The size() methods returns the block count in a partition specified as
 C<cXtXdXsX>
 
-If the disk does not currently exists in the current configuration (in
-global %VTOC), it tries to load it from system.
+If the disk does not currently exists in the current configuration, it tries to
+load it from system.
 
 Bug: no named parameters for now.
 
@@ -388,9 +393,9 @@ sub show(@)
 
 =head2 C<dump>
 
-The C<dump> method, when implemented, will dump in a L<prtvtoc(1M)>
+The C<dump> method, when implemented, will dump in a prtvtoc(1M)
 fashion, the information about the specified disk. Its output should be
-suitable to feed the L<fmthard(1M)> command.
+suitable to feed the fmthard(1M) command.
 
 =head1 BUGS
 
@@ -405,11 +410,11 @@ don't you think?)
 
 =head1 AUTHOR
 
-Jérôme Fenal E<lt>jfenal@free.frE<gt>
+Jérôme Fenal <jfenal@free.fr>
 
 =head1 VERSION
 
-This is version 0.1 of the Solaris::Disk::VTOC module.
+This is version 0.02 of the Solaris::Disk::VTOC module.
 
 =head1 COPYRIGHT
 
@@ -423,13 +428,13 @@ under the same terms as Perl itself.
 =over
 
 =item *
-The L<prtvtoc(1M)> command and man page.
+The prtvtoc(1M) command and man page.
 
 =item *
-The L<format(1M)>  command and man page.
+The format(1M) command and man page.
 
 =item *
-The L<fmthard(1M)> command and man page.
+The fmthard(1M) command and man page.
 
 
 =back
