@@ -98,7 +98,7 @@ require Exporter;
 our %EXPORT_TAGS = ( 'all' => [ qw( VTOCSliceType VTOCSliceFlag ) ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =back
 
@@ -135,7 +135,6 @@ dumps (see the C<readvtocdir> method).
 sub new
 {
     my ($class, @args) = @_;
-    $class = ref( $class ) || $class;
 
     my $self = {};
 	bless $self, $class;
@@ -153,19 +152,19 @@ sub new
         };
     }
     # shouldn't be anything left in @args
-    croak "Solaris::Disk::VTOC::new: Unknown parameter(s): @args" if @args;
+    warn "Solaris::Disk::VTOC->new: Unknown parameter(s): @args" if @args;
 	
     if (defined( $parms{sourcedir} ) ) {
         $self->readvtocdir($parms{sourcedir});
     }
-    elsif (defined( $parms{init} ) && $parms{init} ) {
+    if (defined( $parms{init} ) && $parms{init} ) {
     	foreach my $device (glob "/dev/rdsk/c*t*d*s2") {
-			my $devname = $1 if $device =~ m!c\d+t\d+d\d+!;
+			my $devname = substr $device, 10;
 			$self->readvtoc( device => $devname );
 		}
     }
 
-    $self;
+    return $self;
 }
 
 
@@ -196,7 +195,7 @@ sub readvtoc( )
     my %parms;
 
     my $i = 0;
-    my $re = join "|", qw( device source );
+    my $re = join "|", qw( device source init );
     $re = qr/^(?:$re)$/;
     while( $i < @args ) {
         if( $args[$i] =~ $re ) {
@@ -207,50 +206,59 @@ sub readvtoc( )
         };
     }
     # shouldn't be anything left in @args
-    croak "Solaris::Disk::VTOC::readvtoc: Unknown parameter(s): @args" if @args;
+    warn "Solaris::Disk::VTOC->readvtoc: Unknown parameter(s): @args" if @args;
 
-    my $disk = $1 if $parms{device} =~ m!(c\d+t\d+d\d+)(?:s\d)*!;
+    my $disk;
+    if (defined($parms{device}) && $parms{device} =~ m!(c\d+t\d+d\d+)(?:s\d)*!) {
+	    $disk = $1; 
+    } else {
+	    warn "Device name not validated";
+	    return;
+    }
 
     # Do not re-read for now
     return if defined( $self->{$disk} );
 
 	# Initialisation of disk parameters
 
-    $self->{$disk}{'bytespersector'}  = $self->{$disk}{'sectorspertrack'} =
-      $self->{$disk}{'sectorspercyl'} = $self->{$disk}{'cylinders'}       =
-      $self->{$disk}{'accylinders'}   = 0;
+    $self->{$disk}{bytespersector}  = $self->{$disk}{sectorspertrack} =
+      $self->{$disk}{sectorspercyl} = $self->{$disk}{cylinders}       =
+      $self->{$disk}{accylinders}   = 0;
 
     # Initialisation as not all slices are reported by prtvtoc(1M)
     foreach my $n ( 0 .. 7 ) {
         my $pn = 'slice' . $n;
-        $self->{$disk}{$pn}{'tag'}   = 0;
-        $self->{$disk}{$pn}{'flag'}  = '00';
-        $self->{$disk}{$pn}{'begin'} = 0;
-        $self->{$disk}{$pn}{'count'} = 0;
-        $self->{$disk}{$pn}{'last'}  = 0;
-        $self->{$disk}{$pn}{'size'}  = 0;
+        $self->{$disk}{$pn}{tag}   = 0;
+        $self->{$disk}{$pn}{flag}  = '00';
+        $self->{$disk}{$pn}{begin} = 0;
+        $self->{$disk}{$pn}{count} = 0;
+        $self->{$disk}{$pn}{last}  = 0;
+        $self->{$disk}{$pn}{size}  = 0;
     }
 
-    $self->{$disk}{source} = defined $parms{source}
+    $self->{$disk}{source} = defined($parms{source})
                            ? $parms{source}
                            : "prtvtoc /dev/rdsk/" . $disk . "s2 |";
 
-    open VTOC, $self->{$disk}{source}
-      or carp "Solaris::Disk::VTOC::readvtoc Disk $disk won't reveal its geometry (from "
-              . $self->{$disk}{source} . ")";
+    if (!open VTOC, $self->{$disk}{source}) {
+      warn "Solaris::Disk::VTOC->readvtoc: Cannot open source "
+              . $self->{$disk}{source} . " for disk $disk";
+      delete $self->{$disk};
+      return;
+    }
 
     while (<VTOC>) {
-        my ( $n, $pn, $tag, $flag, $fsec, $secount, $lsector );
-
-        $self->{$disk}{'bytespersector'}  = $1 if m!^\*\s+(\d+) bytes/sector!;
-        $self->{$disk}{'sectorspertrack'} = $1 if m!^\*\s+(\d+) sectors/track!;
-        $self->{$disk}{'sectorspercyl'}   = $1 if m!^\*\s+(\d+) sectors/cylinder!;
-        $self->{$disk}{'cylinders'}       = $1 if m!^\*\s+(\d+) cylinders!;
-        $self->{$disk}{'accylinders'} = $1 if m!^\*\s+(\d+) accessible cylinders!;
+        $self->{$disk}{bytespersector}  = $1 if m!^\*\s+(\d+) bytes/sector!;
+        $self->{$disk}{sectorspertrack} = $1 if m!^\*\s+(\d+) sectors/track!;
+        $self->{$disk}{sectorspercyl}   = $1 if m!^\*\s+(\d+) sectors/cylinder!;
+        $self->{$disk}{cylinders}       = $1 if m!^\*\s+(\d+) cylinders!;
+        $self->{$disk}{accylinders} = $1 if m!^\*\s+(\d+) accessible cylinders!;
         next if ( $_ =~ /^\*.*$/ );
 
-        ( $n, $tag, $flag, $fsec, $secount, $lsector ) = split;
-        $pn = 'slice' . $n;
+	my @l = split;
+	next if 6 != scalar @l;
+        my ( $n, $tag, $flag, $fsec, $secount, $lsector ) = @l;
+        my $pn = 'slice' . $n;
 
         #    $self->{$disk}{$pn}{'num'}=$n;
         $self->{$disk}{$pn}{'tag'}   = $tag;
@@ -259,7 +267,11 @@ sub readvtoc( )
         $self->{$disk}{$pn}{'count'} = $secount;
         $self->{$disk}{$pn}{'last'}  = $lsector;
     }
-    close VTOC;
+    if (! close VTOC) {
+      warn "Solaris::Disk::VTOC->readvtoc Disk $disk won't reveal its geometry (from "
+              . $self->{$disk}{source} . ")";
+      
+    }
 
     foreach my $n ( 0 .. 7 ) {
         my $pn = 'slice' . $n;
@@ -280,6 +292,7 @@ C<readvtocdir> return the list of the disk vtocs found in the given
 directory.
 
 =cut
+
 sub readvtocdir($$)
 {
     my ($self, $dir) = @_;
@@ -319,12 +332,17 @@ Bug: no named parameters for now.
 
 sub size($$)
 {
+    my ($ssize, $dev, $slice, $disk);
     my $self = shift;
-    my $size;
-    my $dev = shift or croak "Solaris::Disk::VTOC::size: You must at least specify a device";
-    my $slice = shift;  # Can have no slice defined
-    my $disk;
 
+    $dev = shift;
+
+    if (! defined $dev) {
+        warn "Solaris::Disk::VTOC->size: You must at least specify a device";
+	    return undef;
+    }
+    $slice = shift;  # Can have no slice defined
+    
     if ($dev =~ m!(c\d+t\d+d\d+)! ) {
         $disk = $1;
         if (defined $slice) {
@@ -332,19 +350,22 @@ sub size($$)
         } elsif ($dev =~ m!${disk}s(\d+)!) {
             $slice = 'slice' . $1;
         } else {
-            croak "__FILE__:__LINE__ No or invalid slice specified ($dev, $slice)";
+            warn "Solaris::Disk::VTOC->size: No or invalid slice specified ($dev, $slice)";
+            return undef;
         }
     } else {
-        croak "Solaris::Disk::VTOC::size: Invalid disk specified ($dev)";
+        warn "Solaris::Disk::VTOC->size: Invalid disk specified ($dev)";
+        return undef;
     }
 
     $self->readvtoc($disk) if not defined $self->{$disk};
 
     # slice defaults to all zero at disk init in readvtoc
-    carp "Solaris::Disk::VTOC::size: Disk $disk does not exists"
-        if (! defined ($size = $self->{$disk}{$slice}{'count'} ) );
+    if (! defined ($ssize = $self->{$disk}{$slice}{count} ) ) {
+        warn "Solaris::Disk::VTOC->size: Disk $disk does not exists"
+    }
 
-    $size;
+    return $ssize;
 }
 
 =head2 C<show>
@@ -359,8 +380,7 @@ sub show(@)
     my $self = shift;
     my $dev;
     foreach $dev ( sort @_ ) {
-        if ($dev =~ m!(c\d+t\d+d\d+)!) {
-            $dev = $1;
+        if (defined $self->{$dev}) {
             print "Disk description for $dev\:\n";
             print $self->{$dev}{'bytespersector'}  . " bytes/sector\n";
             print $self->{$dev}{'sectorspertrack'} . " sectors/track\n";
@@ -414,7 +434,7 @@ Jérôme Fenal <jfenal@free.fr>
 
 =head1 VERSION
 
-This is version 0.02 of the Solaris::Disk::VTOC module.
+This is version 0.03 of the Solaris::Disk::VTOC module.
 
 =head1 COPYRIGHT
 

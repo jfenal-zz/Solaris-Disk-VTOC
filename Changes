@@ -1,0 +1,10 @@
+Revision history for Solaris-Disk-Mnttab
+
+0.01	September 1st, 2004
+	First release.
+
+0.01	September 5th, 2004
+	Minor fixes (packaging, documentation)
+
+0.03    March, 7th 2005
+    More coverage in tests.

@@ -1,15 +1,22 @@
-MANIFEST
 Build.PL
+Changes
 INSTALL
 lib/Solaris/Disk/VTOC.pm
 Makefile.PL
+MANIFEST
 META.yml                                 Module meta-data (added by MakeMaker)
 README
 t/00basic.t
 t/01pod.t
 t/02pod-coverage.t
+t/10readdir.t
+t/10readgarb2.t
+t/10readgarb.t
 t/10read.t
 t/11readdir.t
+t/12readdisk.t
+t/15size2.t
+t/15size.t
 t/data/c0t0d0s2.txt
 t/data/c1t0d0s2.txt
 t/data/c1t1d0s2.txt
@@ -25,4 +32,7 @@ t/data/c4t12d0s2.txt
 t/data/c4t13d0s2.txt
 t/data/c4t8d0s2.txt
 t/data/c4t9d0s2.txt
+t/data/c4t99d0s2.txt
+t/data/cdtdddsd.txt
+t/expect.txt
 t/vtoc.txt

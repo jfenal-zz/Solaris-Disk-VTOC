@@ -1,40 +1,22 @@
-# in case Test::More ain't there
-BEGIN {
-    eval { require Test::More; };
-    print "1..0\n" and exit if $@;
-}
-
-use strict;
-use Test::More;
-use lib qw( ./lib ../lib );
-
-plan tests => 3;
-
-BEGIN { use_ok('Solaris::Disk::VTOC'); };
-require_ok('Solaris::Disk::VTOC');
-
-my $vtoc = Solaris::Disk::VTOC->new;
-isa_ok($vtoc, 'Solaris::Disk::VTOC');
-
-$vtoc->readvtoc(
-    device => 'c0t6d0s2',
-    source => 't/vtoc.txt'
-  );
-
-# coverage : read a second time to test coverage of the non re-read test
-$vtoc->readvtoc(
-    device => 'c0t6d0s2',
-    source => 't/vtoc.txt'
-  );
-
-# coverage : do not specify source
-$vtoc->readvtoc(
-    device => 'c99t99d99s16',
-  );
-
-is_deeply($vtoc, bless( {
+Slice 0 : 984960
+Slice 1 : 103040
+Slice 2 : 3200
+Slice 3 : 3200
+Slice 4 : 3200
+Slice 5 : 3200
+Slice 6 : 0
+Slice 7 : 0
+Slice 0 : 984960
+Slice 1 : 103040
+Slice 2 : 3200
+Slice 3 : 3200
+Slice 4 : 3200
+Slice 5 : 3200
+Slice 6 : 0
+Slice 7 : 0
+$VAR1 = \bless( {
                    'c0t6d0' => {
-                                 'source' => 't/vtoc.txt',
+                                 'source' => 'vtoc.txt',
                                  'slice3' => {
                                                'count' => 3200,
                                                'last' => '1094399',
@@ -105,18 +87,4 @@ is_deeply($vtoc, bless( {
                                              },
                                  'accylinders' => '2048'
                                }
-                 }, "Solaris::Disk::VTOC" )
-                , "Data structure");
-
-open NULL, "> /dev/null"
-	or die "Cannot open /dev/null";
-*OUT = *STDOUT;
-*STDOUT = *NULL;
-
-# coverage test for show
-$vtoc->show;
-$vtoc->show('c0t6d0');
-$vtoc->show('c99t99d99s16');
-
-*STDOUT = *OUT;
-
+                 }, 'Solaris::Disk::Partitions' );

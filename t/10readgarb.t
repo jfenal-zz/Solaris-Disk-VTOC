@@ -6,6 +6,7 @@ BEGIN {
 
 use strict;
 use Test::More;
+use Data::Dumper;
 use lib qw( ./lib ../lib );
 
 plan tests => 3;
@@ -13,24 +14,14 @@ plan tests => 3;
 BEGIN { use_ok('Solaris::Disk::VTOC'); };
 require_ok('Solaris::Disk::VTOC');
 
-my $vtoc = Solaris::Disk::VTOC->new;
-isa_ok($vtoc, 'Solaris::Disk::VTOC');
+my $vtoc = new Solaris::Disk::VTOC(init => 0);
 
 $vtoc->readvtoc(
     device => 'c0t6d0s2',
-    source => 't/vtoc.txt'
+    source => 't/vtoc.txt',
+    some   => 'garbage',
   );
 
-# coverage : read a second time to test coverage of the non re-read test
-$vtoc->readvtoc(
-    device => 'c0t6d0s2',
-    source => 't/vtoc.txt'
-  );
-
-# coverage : do not specify source
-$vtoc->readvtoc(
-    device => 'c99t99d99s16',
-  );
 
 is_deeply($vtoc, bless( {
                    'c0t6d0' => {
@@ -108,15 +99,10 @@ is_deeply($vtoc, bless( {
                  }, "Solaris::Disk::VTOC" )
                 , "Data structure");
 
-open NULL, "> /dev/null"
-	or die "Cannot open /dev/null";
-*OUT = *STDOUT;
-*STDOUT = *NULL;
+$vtoc->readvtoc(
+    device => 'cdtdddsd',
+    source => 't/data/cdtdddsd.txt',
+    init => 1,
+  );
 
-# coverage test for show
-$vtoc->show;
-$vtoc->show('c0t6d0');
-$vtoc->show('c99t99d99s16');
-
-*STDOUT = *OUT;
-
+ok(!defined $vtoc->{cdtdddsd}, "Badly named device not read");
