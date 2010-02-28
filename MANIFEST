@@ -6,6 +6,7 @@ Makefile.PL
 MANIFEST
 META.yml                                 Module meta-data (added by MakeMaker)
 README
+SIGNATURE
 t/00basic.t
 t/01pod.t
 t/02pod-coverage.t

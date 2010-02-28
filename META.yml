@@ -1,10 +1,21 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Solaris-Disk-VTOC
-version:      0.03
-version_from: 
-installdirs:  site
+---
+name: Solaris-Disk-VTOC
+version: 0.04
+author:
+  - 'Jérôme Fenal <jfenal@free.fr>'
+abstract: Read Solaris VTOC (aka. slices or partitions) from disks
+license: perl
+resources:
+  license: ~
 requires:
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.17
+  perl: 5.6.1
+recommends:
+  Test::More: 0
+provides:
+  Solaris::Disk::VTOC:
+    file: lib/Solaris/Disk/VTOC.pm
+    version: 0.04
+generated_by: Module::Build version 0.32
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2

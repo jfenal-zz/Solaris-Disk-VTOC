@@ -8,7 +8,7 @@ use strict;
 use Test::More;
 use lib qw( ./lib ../lib );
 
-plan tests => 7;
+BEGIN { plan tests => 8; }
 
 BEGIN { use_ok('Solaris::Disk::VTOC'); };
 require_ok('Solaris::Disk::VTOC');

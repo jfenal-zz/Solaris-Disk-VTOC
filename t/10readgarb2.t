@@ -9,7 +9,7 @@ use Test::More;
 use Data::Dumper;
 use lib qw( ./lib ../lib );
 
-plan tests => 2;
+BEGIN { plan tests => 3; }
 
 BEGIN { use_ok('Solaris::Disk::VTOC'); };
 require_ok('Solaris::Disk::VTOC');
